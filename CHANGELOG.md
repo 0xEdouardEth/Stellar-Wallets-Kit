@@ -12,13 +12,12 @@ See [standard-version](https://github.com/conventional-changelog/standard-versio
   renames `Transaction#toXDR()` to `toXdr()` and the same rename applies to the raw XDR classes (e.g.
   `xdr.HashIdPreimage#toXdr()`); `Transaction#hash()`/`signatureBase()` now return `Uint8Array` instead
   of `Buffer`.
-
-### Known issue
-
-- Signing a Trezor `manageBuyOffer`/`manageSellOffer` transaction is currently broken: it depends on
-  `@trezor/connect-plugin-stellar`, which hasn't been updated for stellar-sdk v17's rebuilt XDR layer
-  (see the `TODO` in `sdk/modules/trezor.module.ts`). All other Trezor operations are unaffected. This
-  will be fixed once that dependency ships a v17-compatible release.
+- Drop the `@trezor/connect-plugin-stellar` dependency and replace it with a local
+  `transformTransaction` (`sdk/modules/trezor-transform.ts`). That package's version of the function
+  reads offer prices via a method-chain (`xdrOperation.body().value().price().n()/.d()`) that
+  stellar-sdk v17's rebuilt XDR layer no longer supports (those became plain properties), so signing a
+  Trezor `manageBuyOffer`, `manageSellOffer`, or `createPassiveSellOffer` transaction threw. The local
+  replacement fixes the property access and isn't blocked on Trezor shipping a v17-compatible release.
 
 ### 2.5.0 (2026-06-24)
 

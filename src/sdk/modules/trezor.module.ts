@@ -2,8 +2,8 @@ import TrezorConnectImport from "@trezor/connect-web";
 const TrezorConnect: any = "default" in TrezorConnectImport
   ? (TrezorConnectImport as any).default
   : (TrezorConnectImport as any);
-import { transformTransaction } from "@trezor/connect-plugin-stellar";
 import { Transaction } from "@stellar/stellar-sdk";
+import { transformTransaction } from "./trezor-transform.ts";
 import { decodeHex, encodeBase64 } from "@std/encoding";
 import { hardwareWalletPaths, mnemonicPath, selectedNetwork } from "../../state/mod.ts";
 import { type HardwareWalletModuleInterface, ModuleType } from "../../types/mod.ts";
@@ -157,13 +157,7 @@ export class TrezorModule implements HardwareWalletModuleInterface {
     if (!network) throw parseError(new Error("You need to provide or set a network passphrase"));
 
     const tx: Transaction = new Transaction(xdr, network);
-    // TODO(stellar-sdk v17): `transformTransaction` reads `xdrOperation.body().value().price().n()/.d()`
-    // for manageBuyOffer/manageSellOffer operations, but stellar-sdk v17 rebuilt the XDR layer on
-    // @stellar/js-xdr v5, where those became plain readonly properties instead of callable accessors.
-    // That call now throws for those two operation types until @trezor/connect-plugin-stellar ships a
-    // fix for v17's XDR shape (tracked upstream: https://github.com/trezor/trezor-suite). Everything
-    // else this plugin reads (source, sequence, fee, memo, timebounds) is plain fields and unaffected.
-    const parsedTx = transformTransaction(mnemonicPathValue, tx as any);
+    const parsedTx = transformTransaction(mnemonicPathValue, tx);
     const result = await TrezorConnect.stellarSignTransaction(parsedTx);
 
     if (!result.success) {
